@@ -10,7 +10,7 @@ async def get_current_user(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    token = request.cookies.get("session")
+    token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
     try:

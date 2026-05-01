@@ -55,7 +55,7 @@ async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
     jwt_token = create_access_token(str(user.id))
     response = RedirectResponse(url=settings.FRONTEND_URL)
     response.set_cookie(
-        key="session",
+        key="access_token",
         value=jwt_token,
         httponly=True,
         secure=False,  # True en producción con HTTPS
@@ -68,7 +68,7 @@ async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
 @router.post("/logout")
 async def logout():
     response = RedirectResponse(url=settings.FRONTEND_URL, status_code=303)
-    response.delete_cookie("session")
+    response.delete_cookie("access_token")
     return response
 
 
