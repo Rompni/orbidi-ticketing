@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Env
+.env
+.env.local
+*.env
+
+# Uploads (volumen local)
+uploads/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Docker
+.docker/
+
+# Setuptools                                                                                                          
+*.egg-info/
+
+# MyPy
+.mypy_cache/
+
+# Ruff / linters                                                                                                      
+.ruff_cache/
+                                                                                                                        
+# Frontend build                                          
+frontend/dist/
+
+# Logs
+*.log
