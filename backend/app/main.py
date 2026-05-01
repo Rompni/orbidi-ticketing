@@ -4,7 +4,7 @@ from fastapi.openapi.utils import get_openapi
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
-from app.api import auth, tickets, comments
+from app.api import auth, tickets, comments, attachments
 
 app = FastAPI(
     title="Orbidi Ticketing API",
@@ -48,6 +48,7 @@ app.add_middleware(SessionMiddleware, secret_key=settings.JWT_SECRET)
 app.include_router(auth.router)
 app.include_router(tickets.router)
 app.include_router(comments.router)
+app.include_router(attachments.router)
 
 
 @app.get("/health")
