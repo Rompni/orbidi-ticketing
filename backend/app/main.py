@@ -4,7 +4,7 @@ from fastapi.openapi.utils import get_openapi
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
-from app.api import auth, tickets, comments, attachments, notifications, ws as ws_router
+from app.api import auth, tickets, comments, attachments, notifications, users, ws as ws_router
 
 app = FastAPI(
     title="Orbidi Ticketing API",
@@ -50,6 +50,7 @@ app.include_router(tickets.router)
 app.include_router(comments.router)
 app.include_router(attachments.router)
 app.include_router(notifications.router)
+app.include_router(users.router)
 app.include_router(ws_router.router)
 
 

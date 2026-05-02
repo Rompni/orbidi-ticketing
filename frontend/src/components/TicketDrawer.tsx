@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, type ChangeEvent, type FormEvent } from "r
 import { useTicket, usePatchTicket } from "../features/tickets/useTickets";
 import { useComments, useCreateComment } from "../features/comments/useComments";
 import { useAttachments, useUploadAttachment } from "../features/attachments/useAttachments";
+import { useUsers } from "../features/users/useUsers";
 import { attachmentsApi, type Attachment } from "../api/attachments";
 import { type Comment } from "../api/comments";
 import { type TicketStatus, type TicketPriority } from "../api/tickets";
@@ -82,6 +83,7 @@ function DrawerBody({ ticketId, onClose }: { ticketId: number; onClose: () => vo
   const patch = usePatchTicket();
   const createComment = useCreateComment(ticketId);
   const uploadAttachment = useUploadAttachment(ticketId);
+  const { data: users = [] } = useUsers();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -203,15 +205,27 @@ function DrawerBody({ ticketId, onClose }: { ticketId: number; onClose: () => vo
               <span className="text-sm text-slate-700">{ticket.author.name}</span>
             </div>
           </div>
-          {ticket.assignee && (
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Asignado</span>
-              <div className="flex items-center gap-1.5 py-0.5">
-                <Avatar name={ticket.assignee.name} url={ticket.assignee.avatar_url} />
-                <span className="text-sm text-slate-700">{ticket.assignee.name}</span>
-              </div>
-            </div>
-          )}
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Asignado</span>
+            <select
+              value={ticket.assignee?.id ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                patch.mutate({
+                  id: ticket.id,
+                  data: { assignee_id: val ? Number(val) : null },
+                });
+              }}
+              className={selectClass}
+            >
+              <option value="">Sin asignar</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Creado</span>
             <span className="text-sm text-slate-600 py-0.5">
