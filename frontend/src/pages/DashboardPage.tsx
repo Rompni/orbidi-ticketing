@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../stores/auth";
+import { useWebSocket } from "../features/notifications/useWebSocket";
+import { NotificationBell } from "../components/NotificationBell";
 import { TicketDrawer } from "../components/TicketDrawer";
 import TicketsPage from "./TicketsPage";
 import KanbanPage from "./KanbanPage";
@@ -11,6 +13,8 @@ export default function DashboardPage() {
   const apiUrl = import.meta.env.VITE_API_URL;
   const [view, setView] = useState<View>("list");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
+
+  useWebSocket(!!user);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -33,13 +37,14 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2">
+          <NotificationBell onTicketClick={setSelectedTicketId} />
           {user?.avatar_url && (
             <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full" />
           )}
           <span className="text-sm text-slate-600">{user?.name}</span>
           <form action={`${apiUrl}/auth/logout`} method="post">
-            <button type="submit" className="text-sm text-slate-400 hover:text-slate-700">
+            <button type="submit" className="text-sm text-slate-400 hover:text-slate-700 ml-1">
               Salir
             </button>
           </form>
