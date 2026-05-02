@@ -29,8 +29,9 @@ import { StatusBadge } from "../components/StatusBadge";
 import { PriorityBadge } from "../components/PriorityBadge";
 
 function Avatar({ name, url }: { name: string; url: string | null }) {
-  if (url) {
-    return <img src={url} alt={name} className="w-6 h-6 rounded-full object-cover" />;
+  const [errored, setErrored] = useState(false);
+  if (url && !errored) {
+    return <img src={url} alt={name} className="w-6 h-6 rounded-full object-cover" onError={() => setErrored(true)} />;
   }
   return (
     <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-semibold text-slate-500 uppercase">

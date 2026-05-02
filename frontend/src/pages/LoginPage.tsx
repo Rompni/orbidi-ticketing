@@ -1,5 +1,6 @@
 export default function LoginPage() {
   const apiUrl = import.meta.env.VITE_API_URL;
+  document.title = "Iniciar sesión — Orbidi Ticketing";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">

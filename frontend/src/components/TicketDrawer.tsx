@@ -30,7 +30,10 @@ function timeAgo(dateStr: string): string {
 // ─── sub-components ──────────────────────────────────────────────────────────
 
 function Avatar({ name, url }: { name: string; url: string | null }) {
-  if (url) return <img src={url} alt={name} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />;
+  const [errored, setErrored] = useState(false);
+  if (url && !errored) {
+    return <img src={url} alt={name} className="w-6 h-6 rounded-full object-cover flex-shrink-0" onError={() => setErrored(true)} />;
+  }
   return (
     <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-semibold text-slate-500 uppercase flex-shrink-0">
       {name[0]}
@@ -95,6 +98,13 @@ function DrawerBody({ ticketId, onClose }: { ticketId: number; onClose: () => vo
       setTitle(ticket.title);
       setDescription(ticket.description);
     }
+  }, [ticket]);
+
+  useEffect(() => {
+    if (!ticket) return;
+    const prev = document.title;
+    document.title = `#${ticket.id} ${ticket.title} — Orbidi Ticketing`;
+    return () => { document.title = prev; };
   }, [ticket]);
 
   useEffect(() => {

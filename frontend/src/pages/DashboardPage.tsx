@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../stores/auth";
 import { useWebSocket } from "../features/notifications/useWebSocket";
 import { NotificationBell } from "../components/NotificationBell";
@@ -15,8 +15,14 @@ export default function DashboardPage() {
   const [view, setView] = useState<View>("list");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
+  const [avatarErrored, setAvatarErrored] = useState(false);
 
   useWebSocket(!!user);
+
+  useEffect(() => {
+    const viewLabel = view === "list" ? "Lista" : "Kanban";
+    document.title = `${viewLabel} — Orbidi Ticketing`;
+  }, [view]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -54,8 +60,10 @@ export default function DashboardPage() {
 
           <NotificationBell onTicketClick={setSelectedTicketId} />
 
-          {user?.avatar_url && (
-            <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full" />
+          {user && (
+            user.avatar_url && !avatarErrored
+              ? <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full" onError={() => setAvatarErrored(true)} />
+              : <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-500 uppercase">{user.name[0]}</div>
           )}
           <span className="text-sm text-slate-600">{user?.name}</span>
           <form action={`${apiUrl}/auth/logout`} method="post">

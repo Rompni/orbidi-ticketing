@@ -23,8 +23,9 @@ const COLUMNS: { id: TicketStatus; label: string; dot: string }[] = [
 ];
 
 function Avatar({ name, url }: { name: string; url: string | null }) {
-  if (url) {
-    return <img src={url} alt={name} className="w-5 h-5 rounded-full object-cover" />;
+  const [errored, setErrored] = useState(false);
+  if (url && !errored) {
+    return <img src={url} alt={name} className="w-5 h-5 rounded-full object-cover" onError={() => setErrored(true)} />;
   }
   return (
     <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[9px] font-semibold text-slate-500 uppercase">
