@@ -41,7 +41,7 @@ function Avatar({ name, url }: { name: string; url: string | null }) {
 
 function UserCell({ name, url }: { name: string; url: string | null }) {
   return (
-    <div className="flex items-center gap-2 max-w-[120px]">
+    <div className="flex items-center gap-2 min-w-0">
       <Avatar name={name} url={url} />
       <span className="text-slate-600 truncate">{name}</span>
     </div>
