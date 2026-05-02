@@ -58,7 +58,7 @@ function CardContent({ ticket, overlay = false }: { ticket: Ticket; overlay?: bo
   );
 }
 
-function KanbanCard({ ticket }: { ticket: Ticket }) {
+function KanbanCard({ ticket, onTicketClick }: { ticket: Ticket; onTicketClick: (id: number) => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: ticket.id,
     data: { ticket },
@@ -71,6 +71,7 @@ function KanbanCard({ ticket }: { ticket: Ticket }) {
       style={style}
       {...listeners}
       {...attributes}
+      onClick={() => onTicketClick(ticket.id)}
       className={isDragging ? "opacity-40" : ""}
     >
       <CardContent ticket={ticket} />
@@ -81,9 +82,11 @@ function KanbanCard({ ticket }: { ticket: Ticket }) {
 function KanbanColumn({
   col,
   tickets,
+  onTicketClick,
 }: {
   col: (typeof COLUMNS)[0];
   tickets: Ticket[];
+  onTicketClick: (id: number) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: col.id });
 
@@ -100,14 +103,14 @@ function KanbanColumn({
           ${isOver ? "border-slate-400 bg-slate-100" : "border-slate-200 bg-slate-50/50"}`}
       >
         {tickets.map((ticket) => (
-          <KanbanCard key={ticket.id} ticket={ticket} />
+          <KanbanCard key={ticket.id} ticket={ticket} onTicketClick={onTicketClick} />
         ))}
       </div>
     </div>
   );
 }
 
-export default function KanbanPage() {
+export default function KanbanPage({ onTicketClick }: { onTicketClick: (id: number) => void }) {
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const { data, isLoading } = useTickets();
   const updateStatus = useUpdateTicketStatus();
@@ -152,7 +155,7 @@ export default function KanbanPage() {
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="grid grid-cols-4 gap-4">
         {COLUMNS.map((col) => (
-          <KanbanColumn key={col.id} col={col} tickets={grouped[col.id]} />
+          <KanbanColumn key={col.id} col={col} tickets={grouped[col.id]} onTicketClick={onTicketClick} />
         ))}
       </div>
       <DragOverlay dropAnimation={null}>

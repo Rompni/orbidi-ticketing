@@ -134,7 +134,7 @@ function SortIcon({ dir }: { dir: false | "asc" | "desc" }) {
 
 const columnResizeMode: ColumnResizeMode = "onChange";
 
-export default function TicketsPage() {
+export default function TicketsPage({ onTicketClick }: { onTicketClick: (id: number) => void }) {
   const [statusFilter, setStatusFilter] = useState<TicketStatus | "">("");
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | "">("");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -306,7 +306,8 @@ export default function TicketsPage() {
                   table.getRowModel().rows.map((row) => (
                     <tr
                       key={row.id}
-                      className="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors"
+                      onClick={() => onTicketClick(row.original.id)}
+                      className="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors cursor-pointer"
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td

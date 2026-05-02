@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../stores/auth";
+import { TicketDrawer } from "../components/TicketDrawer";
 import TicketsPage from "./TicketsPage";
 import KanbanPage from "./KanbanPage";
 
@@ -9,6 +10,7 @@ export default function DashboardPage() {
   const user = useAuth((s) => s.user);
   const apiUrl = import.meta.env.VITE_API_URL;
   const [view, setView] = useState<View>("list");
+  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -45,8 +47,13 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-6">
-        {view === "list" ? <TicketsPage /> : <KanbanPage />}
+        {view === "list"
+          ? <TicketsPage onTicketClick={setSelectedTicketId} />
+          : <KanbanPage onTicketClick={setSelectedTicketId} />
+        }
       </main>
+
+      <TicketDrawer ticketId={selectedTicketId} onClose={() => setSelectedTicketId(null)} />
     </div>
   );
 }

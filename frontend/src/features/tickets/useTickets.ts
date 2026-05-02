@@ -46,6 +46,18 @@ export function useDeleteTicket() {
   });
 }
 
+export function usePatchTicket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: TicketUpdate }) =>
+      ticketsApi.update(id, data),
+    onSuccess: (_result, { id }) => {
+      qc.invalidateQueries({ queryKey: ["tickets"] });
+      qc.invalidateQueries({ queryKey: ["tickets", id] });
+    },
+  });
+}
+
 export function useUpdateTicketStatus() {
   const qc = useQueryClient();
   return useMutation({
