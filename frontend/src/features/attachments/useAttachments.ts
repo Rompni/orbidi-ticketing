@@ -15,3 +15,11 @@ export function useUploadAttachment(ticketId: number) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["attachments", ticketId] }),
   });
 }
+
+export function useDeleteAttachment(ticketId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (attachmentId: number) => attachmentsApi.remove(ticketId, attachmentId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["attachments", ticketId] }),
+  });
+}

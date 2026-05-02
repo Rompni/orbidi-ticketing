@@ -29,6 +29,12 @@ class ChatRequest(BaseModel):
     messages: list[MessageIn]
 
 
+@router.get("/status")
+async def ai_status(_: User = Depends(get_current_user)):
+    from app.core.config import settings
+    return {"available": bool(settings.ANTHROPIC_API_KEY)}
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,

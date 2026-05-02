@@ -17,6 +17,9 @@ export interface ChatResponse {
 }
 
 export const aiApi = {
+  status: () =>
+    api.get<{ available: boolean }>("/ai/status").then((r) => r.data),
+
   chat: (messages: ChatMessage[]) =>
     api.post<ChatResponse>("/ai/chat", { messages }).then((r) => r.data),
 };

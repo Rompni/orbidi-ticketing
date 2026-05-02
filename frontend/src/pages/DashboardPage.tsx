@@ -4,6 +4,7 @@ import { useWebSocket } from "../features/notifications/useWebSocket";
 import { NotificationBell } from "../components/NotificationBell";
 import { TicketDrawer } from "../components/TicketDrawer";
 import { AiDrawer } from "../components/AiDrawer";
+import { useAiStatus } from "../features/ai/useChat";
 import TicketsPage from "./TicketsPage";
 import KanbanPage from "./KanbanPage";
 
@@ -16,6 +17,7 @@ export default function DashboardPage() {
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [avatarErrored, setAvatarErrored] = useState(false);
+  const { data: aiStatus } = useAiStatus();
 
   useWebSocket(!!user);
 
@@ -49,8 +51,9 @@ export default function DashboardPage() {
           {/* AI assistant button */}
           <button
             onClick={() => setAiOpen(true)}
-            title="Asistente IA"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            title={aiStatus?.available ? "Asistente IA" : "Asistente IA no disponible (configura ANTHROPIC_API_KEY)"}
+            disabled={!aiStatus?.available}
+            className="p-1.5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:hover:text-slate-400 disabled:hover:bg-transparent"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round"

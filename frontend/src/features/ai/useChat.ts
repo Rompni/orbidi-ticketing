@@ -1,6 +1,14 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { aiApi, type ToolCall } from "../../api/ai";
+
+export function useAiStatus() {
+  return useQuery({
+    queryKey: ["ai-status"],
+    queryFn: () => aiApi.status(),
+    staleTime: Infinity,
+  });
+}
 
 export interface DisplayMessage {
   role: "user" | "assistant";
