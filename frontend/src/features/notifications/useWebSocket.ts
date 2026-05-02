@@ -18,9 +18,15 @@ export function useWebSocket(enabled: boolean) {
 
       ws.onmessage = (event) => {
         try {
-          const msg = JSON.parse(event.data as string) as { type: string };
+          const msg = JSON.parse(event.data as string) as {
+            type: string;
+            ticket_id?: number | null;
+          };
           if (msg.type === "notification") {
             qc.invalidateQueries({ queryKey: ["notifications"] });
+            if (msg.ticket_id) {
+              qc.invalidateQueries({ queryKey: ["tickets"] });
+            }
           }
         } catch {
           // ignore malformed messages
