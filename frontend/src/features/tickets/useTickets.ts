@@ -1,5 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ticketsApi, type ListParams, type TicketCreate, type TicketUpdate } from "../../api/tickets";
+import {
+  ticketsApi,
+  type ListParams,
+  type TicketCreate,
+  type TicketUpdate,
+  type TicketStatus,
+  type TicketList,
+} from "../../api/tickets";
 
 export function useTickets(params?: ListParams) {
   return useQuery({
@@ -36,5 +43,26 @@ export function useDeleteTicket() {
   return useMutation({
     mutationFn: (id: number) => ticketsApi.remove(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tickets"] }),
+  });
+}
+
+export function useUpdateTicketStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: number; status: TicketStatus }) =>
+      ticketsApi.update(id, { status }),
+    onMutate: async ({ id, status }) => {
+      await qc.cancelQueries({ queryKey: ["tickets"] });
+      const snapshots = qc.getQueriesData<TicketList>({ queryKey: ["tickets"] });
+      qc.setQueriesData<TicketList>({ queryKey: ["tickets"] }, (old) => {
+        if (!old) return old;
+        return { ...old, items: old.items.map((t) => (t.id === id ? { ...t, status } : t)) };
+      });
+      return { snapshots };
+    },
+    onError: (_err, _vars, ctx) => {
+      ctx?.snapshots.forEach(([key, data]) => qc.setQueryData(key, data));
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["tickets"] }),
   });
 }
