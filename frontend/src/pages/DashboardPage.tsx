@@ -3,6 +3,7 @@ import { useAuth } from "../stores/auth";
 import { useWebSocket } from "../features/notifications/useWebSocket";
 import { NotificationBell } from "../components/NotificationBell";
 import { TicketDrawer } from "../components/TicketDrawer";
+import { AiDrawer } from "../components/AiDrawer";
 import TicketsPage from "./TicketsPage";
 import KanbanPage from "./KanbanPage";
 
@@ -13,6 +14,7 @@ export default function DashboardPage() {
   const apiUrl = import.meta.env.VITE_API_URL;
   const [view, setView] = useState<View>("list");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
 
   useWebSocket(!!user);
 
@@ -38,7 +40,20 @@ export default function DashboardPage() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          {/* AI assistant button */}
+          <button
+            onClick={() => setAiOpen(true)}
+            title="Asistente IA"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+          </button>
+
           <NotificationBell onTicketClick={setSelectedTicketId} />
+
           {user?.avatar_url && (
             <img src={user.avatar_url} alt="" className="w-7 h-7 rounded-full" />
           )}
@@ -59,6 +74,7 @@ export default function DashboardPage() {
       </main>
 
       <TicketDrawer ticketId={selectedTicketId} onClose={() => setSelectedTicketId(null)} />
+      <AiDrawer isOpen={aiOpen} onClose={() => setAiOpen(false)} />
     </div>
   );
 }
