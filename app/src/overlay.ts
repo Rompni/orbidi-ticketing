@@ -14,7 +14,6 @@ type Phase = "waiting" | "hovering" | "busy" | "done" | "error";
 
 const HUB_DWELL_MS = 450; // hovering the hub this long switches Convert ⇄ Tools
 const RESULT_MS = 2200; // how long the result stays visible after a drop
-const RELEASE_GRACE_MS = 250; // the drop event can arrive just after the mouse release
 
 const svg = document.querySelector<SVGSVGElement>("#wheel")!;
 
@@ -150,12 +149,6 @@ svg.addEventListener("mouseleave", () => phase === "done" && hideLater(600));
 window.addEventListener("keydown", (e) => e.key === "Escape" && hide());
 
 void listen("overlay:show", () => reset());
-void listen("trigger:release", () => {
-  // Released without dropping on the wheel: go away.
-  window.setTimeout(() => {
-    if (phase === "waiting" || phase === "hovering") hide();
-  }, RELEASE_GRACE_MS);
-});
 
 void getCurrentWebview().onDragDropEvent((event) => {
   const p = event.payload;

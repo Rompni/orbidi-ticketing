@@ -10,15 +10,15 @@ use std::thread;
 use std::time::Duration;
 
 use device_query::{DeviceQuery, DeviceState, Keycode};
-use tauri::{AppHandle, Emitter, Manager, PhysicalPosition};
+use tauri::AppHandle;
 
-use crate::permissions;
+use crate::{overlay, permissions};
 
 const POLL_INTERVAL: Duration = Duration::from_millis(16);
 /// How far (in pixels) the cursor must travel with the button held to count as a drag.
 const DRAG_THRESHOLD: i32 = 6;
-/// Logical width and height of the overlay window (see tauri.conf.json).
-const OVERLAY_SIZE: f64 = 380.0;
+/// The drop event can arrive just after the button is released.
+const RELEASE_GRACE: Duration = Duration::from_millis(350);
 
 pub fn spawn(app: AppHandle) {
     thread::spawn(move || {
@@ -37,13 +37,21 @@ pub fn spawn(app: AppHandle) {
                 let origin = *press_origin.get_or_insert(mouse.coords);
                 if !shown && moved(origin, mouse.coords) && shift_down(&device) {
                     shown = true;
-                    show_overlay(&app);
+                    overlay::show_at_cursor(&app);
                 }
             } else {
                 press_origin = None;
                 if shown {
                     shown = false;
-                    let _ = app.emit_to("overlay", "trigger:release", ());
+                    // Released without dropping on the wheel: always close it, so it
+                    // can never get stuck on screen. After a drop the UI closes it.
+                    let app = app.clone();
+                    thread::spawn(move || {
+                        thread::sleep(RELEASE_GRACE);
+                        if !overlay::was_dropped() {
+                            overlay::dismiss(&app);
+                        }
+                    });
                 }
             }
             thread::sleep(POLL_INTERVAL);
@@ -71,21 +79,4 @@ fn shift_down(device: &DeviceState) -> bool {
         .get_keys()
         .iter()
         .any(|k| matches!(k, Keycode::LShift | Keycode::RShift))
-}
-
-/// Centers the wheel on the cursor and shows it.
-pub fn show_overlay(app: &AppHandle) {
-    let Some(window) = app.get_webview_window("overlay") else {
-        return;
-    };
-    // Hidden windows may report a zero size (GTK), so use the configured one.
-    if let (Ok(cursor), Ok(scale)) = (app.cursor_position(), window.scale_factor()) {
-        let half = (OVERLAY_SIZE * scale / 2.0) as i32;
-        let _ = window.set_position(PhysicalPosition::new(
-            cursor.x as i32 - half,
-            cursor.y as i32 - half,
-        ));
-    }
-    let _ = window.show();
-    let _ = app.emit_to("overlay", "overlay:show", ());
 }

@@ -1,3 +1,4 @@
+mod overlay;
 mod permissions;
 mod settings;
 mod trigger;
@@ -7,7 +8,7 @@ use std::path::PathBuf;
 use dropwheel_core::{Action, ActionInfo};
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::TrayIconBuilder;
-use tauri::{AppHandle, Manager, WindowEvent};
+use tauri::{AppHandle, DragDropEvent, Manager, WindowEvent};
 
 #[tauri::command]
 fn actions_for(path: PathBuf) -> Vec<ActionInfo> {
@@ -30,9 +31,7 @@ fn reveal(path: PathBuf) -> Result<(), String> {
 
 #[tauri::command]
 fn hide_overlay(app: AppHandle) {
-    if let Some(w) = app.get_webview_window("overlay") {
-        let _ = w.hide();
-    }
+    overlay::dismiss(&app);
 }
 
 #[tauri::command]
@@ -86,6 +85,7 @@ pub fn run() {
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
             let handle = app.handle();
+            overlay::create(handle)?;
             let setup = MenuItem::with_id(handle, "setup", "Setup…", true, None::<&str>)?;
             let quit = MenuItem::with_id(handle, "quit", "Quit Dropwheel", true, None::<&str>)?;
             let mut tray = TrayIconBuilder::new()
@@ -107,12 +107,20 @@ pub fn run() {
             trigger::spawn(handle.clone());
             Ok(())
         })
-        .on_window_event(|window, event| {
+        .on_window_event(|window, event| match event {
             // Windows live for the whole session; closing one only hides it.
-            if let WindowEvent::CloseRequested { api, .. } = event {
+            WindowEvent::CloseRequested { api, .. } => {
                 api.prevent_close();
                 let _ = window.hide();
             }
+            WindowEvent::DragDrop(drag) if window.label() == overlay::LABEL => {
+                #[cfg(debug_assertions)]
+                eprintln!("dropwheel: {drag:?}");
+                if let DragDropEvent::Drop { .. } = drag {
+                    overlay::mark_dropped();
+                }
+            }
+            _ => {}
         })
         .run(tauri::generate_context!())
         .expect("error while running Dropwheel");

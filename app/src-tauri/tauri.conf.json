@@ -13,20 +13,6 @@
     "macOSPrivateApi": true,
     "windows": [
       {
-        "label": "overlay",
-        "url": "index.html",
-        "width": 380,
-        "height": 380,
-        "transparent": true,
-        "decorations": false,
-        "alwaysOnTop": true,
-        "skipTaskbar": true,
-        "resizable": false,
-        "shadow": false,
-        "focus": false,
-        "visible": false
-      },
-      {
         "label": "onboarding",
         "url": "onboarding.html",
         "title": "Dropwheel",
