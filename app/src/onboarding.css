@@ -1,0 +1,219 @@
+:root {
+  --bg: #fff8f3;
+  --text: #2b1a10;
+  --muted: #7a5a48;
+  --accent: #ff6a2b;
+  --accent-text: #fff;
+  --card: #ffe9da;
+  --line: #f2d3bf;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1d1511;
+    --text: #fbe9dc;
+    --muted: #c4a493;
+    --card: #33241c;
+    --line: #4a3428;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  box-sizing: border-box;
+  height: 100vh;
+  padding: 40px 44px 28px;
+  display: flex;
+  flex-direction: column;
+}
+
+section {
+  flex: 1;
+}
+
+h1 {
+  font-size: 26px;
+  margin: 0 0 12px;
+}
+
+p,
+li {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+ol {
+  padding-left: 20px;
+}
+
+.hint {
+  font-size: 13px;
+}
+
+.warn {
+  background: var(--card);
+  border-left: 3px solid var(--accent);
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.status {
+  margin: 0;
+  font-size: 14px;
+}
+
+.status.ok {
+  color: #2a9d55;
+  font-weight: 600;
+}
+
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+button {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.dots {
+  display: flex;
+  gap: 6px;
+}
+
+.dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.dots span.on {
+  background: var(--accent);
+}
+
+/* Gesture demo */
+.demo {
+  position: relative;
+  height: 180px;
+  margin-bottom: 18px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ffb347, #ff6a2b 55%, #b98bd8);
+  overflow: hidden;
+}
+
+.demo-wheel {
+  position: absolute;
+  left: 58%;
+  top: 50%;
+  width: 130px;
+  height: 130px;
+  transform: translate(-50%, -50%) scale(0);
+  border-radius: 50%;
+  background: rgba(255, 246, 238, 0.45);
+  animation: wheel 3.2s infinite;
+}
+
+.demo-wheel span {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: conic-gradient(from calc(var(--i) * 60deg - 25deg), rgba(255, 238, 224, 0.95) 0 50deg, transparent 50deg);
+  -webkit-mask: radial-gradient(circle, transparent 26px, #000 27px);
+  mask: radial-gradient(circle, transparent 26px, #000 27px);
+}
+
+.demo-wheel span:nth-child(2) {
+  animation: highlight 3.2s infinite;
+}
+
+.demo-file {
+  position: absolute;
+  top: 50%;
+  width: 38px;
+  height: 48px;
+  margin-top: -24px;
+  border-radius: 5px;
+  background: #fff;
+  color: #ff6a2b;
+  font-size: 10px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  animation: file 3.2s infinite;
+}
+
+.demo-key {
+  position: absolute;
+  left: 16px;
+  bottom: 14px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #2b1a10;
+  font: 600 12px inherit;
+  opacity: 0.35;
+  animation: key 3.2s infinite;
+}
+
+@keyframes file {
+  0% { left: 12%; opacity: 0; }
+  10% { opacity: 1; }
+  45%, 70% { left: calc(58% + 22px); }
+  85%, 100% { left: calc(58% + 22px); opacity: 0; }
+}
+
+@keyframes wheel {
+  0%, 25% { transform: translate(-50%, -50%) scale(0); }
+  32%, 80% { transform: translate(-50%, -50%) scale(1); }
+  90%, 100% { transform: translate(-50%, -50%) scale(0); }
+}
+
+@keyframes key {
+  0%, 20% { opacity: 0.35; transform: none; }
+  25%, 80% { opacity: 1; transform: translateY(-2px); }
+  90%, 100% { opacity: 0.35; transform: none; }
+}
+
+@keyframes highlight {
+  0%, 45% { filter: none; }
+  50%, 75% { filter: hue-rotate(-20deg) saturate(6) brightness(0.9); }
+}

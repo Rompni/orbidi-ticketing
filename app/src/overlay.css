@@ -1,0 +1,120 @@
+:root {
+  --segment: rgba(255, 238, 224, 0.92);
+  --segment-text: #4a2a17;
+  --accent: #ff6a2b;
+  --accent-text: #fff;
+  --rim: rgba(255, 246, 238, 0.55);
+  --hub: rgba(255, 228, 206, 0.96);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --segment: rgba(52, 40, 34, 0.92);
+    --segment-text: #ffe6d4;
+    --rim: rgba(40, 30, 26, 0.55);
+    --hub: rgba(70, 52, 42, 0.96);
+  }
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#wheel {
+  width: 100%;
+  height: 100%;
+  display: block;
+  animation: pop 140ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+}
+
+.rim {
+  fill: var(--rim);
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 1;
+}
+
+.segment path {
+  fill: var(--segment);
+  transition: fill 90ms ease;
+}
+
+.segment text,
+.hub text {
+  fill: var(--segment-text);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+
+.segment.hover path {
+  fill: var(--accent);
+}
+
+.segment.hover text {
+  fill: var(--accent-text);
+}
+
+.hub circle {
+  fill: var(--hub);
+  stroke: rgba(255, 255, 255, 0.6);
+  transition: fill 90ms ease;
+}
+
+.hub text {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.hub text.sub {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.hub.hover circle,
+.hub.done circle {
+  fill: var(--accent);
+}
+
+.hub.hover text,
+.hub.done text {
+  fill: var(--accent-text);
+}
+
+.hub.done {
+  cursor: pointer;
+}
+
+.hub.error circle {
+  fill: #d93a3a;
+}
+
+.hub.error text {
+  fill: #fff;
+}
+
+.hub.busy circle {
+  animation: pulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  to {
+    fill: var(--accent);
+  }
+}
