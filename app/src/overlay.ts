@@ -17,6 +17,12 @@ const RESULT_MS = 2200; // how long the result stays visible after a drop
 
 const svg = document.querySelector<SVGSVGElement>("#wheel")!;
 
+// Windows and macOS blur the desktop behind the window (see overlay.rs), so the
+// glass can be more transparent there than on Linux.
+if (/Windows|Macintosh/.test(navigator.userAgent)) {
+  document.documentElement.classList.add("native-blur");
+}
+
 let phase: Phase = "waiting";
 let actions: ActionInfo[] = [];
 let group: ActionInfo["group"] = "convert";

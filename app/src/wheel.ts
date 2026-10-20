@@ -77,8 +77,12 @@ export interface WheelView {
 }
 
 export function render(svg: SVGSVGElement, view: WheelView): void {
-  svg.replaceChildren();
+  svg.replaceChildren(defs());
   svg.append(el("circle", { cx: C, cy: C, r: OUTER_R + 8, class: "rim" }));
+  // Specular sheen across the top, under the translucent segments so it never washes out labels.
+  svg.append(
+    el("ellipse", { cx: C, cy: C - 70, rx: OUTER_R - 6, ry: 120, class: "sheen", "clip-path": "url(#wheel-clip)" }),
+  );
 
   view.labels.forEach((label, i) => {
     const g = el("g", { class: i === view.hover ? "segment hover" : "segment" });
@@ -108,4 +112,28 @@ export function render(svg: SVGSVGElement, view: WheelView): void {
     hub.append(sub);
   }
   svg.append(hub);
+}
+
+function stop(offset: string, cls: string): SVGStopElement {
+  return el("stop", { offset, class: cls });
+}
+
+function linear(id: string, stops: SVGStopElement[], attrs: Record<string, string> = {}) {
+  const g = el("linearGradient", { id, x1: "0", y1: "0", x2: "0.4", y2: "1", ...attrs });
+  g.append(...stops);
+  return g;
+}
+
+/** Gradients for the glass; colors come from CSS so light/dark themes can tune them. */
+function defs(): SVGDefsElement {
+  const d = el("defs", {});
+  const clip = el("clipPath", { id: "wheel-clip" });
+  clip.append(el("circle", { cx: C, cy: C, r: OUTER_R + 8 }));
+  d.append(
+    clip,
+    linear("glass", [stop("0", "glass-top"), stop("1", "glass-bottom")]),
+    linear("glass-hot", [stop("0", "hot-top"), stop("1", "hot-bottom")]),
+    linear("sheen", [stop("0", "sheen-top"), stop("0.6", "sheen-bottom")], { x2: "0", y2: "1" }),
+  );
+  return d;
 }

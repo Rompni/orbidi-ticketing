@@ -40,11 +40,53 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
     #[cfg(not(windows))]
     let builder = builder.visible(false);
 
-    let _window = builder.build()?;
+    let window = builder.build()?;
+    apply_glass(&window);
     // The builder's position isn't always honored for off-screen coordinates.
     #[cfg(windows)]
-    park(&_window);
+    park(&window);
     Ok(())
+}
+
+/// Blurs the desktop behind the wheel (Acrylic on Windows, vibrancy on macOS).
+/// Linux has no such effect; there the wheel's CSS falls back to frosted fills.
+fn apply_glass(window: &tauri::WebviewWindow) {
+    #[cfg(any(windows, target_os = "macos"))]
+    {
+        use tauri::window::{Color, Effect, EffectState, EffectsBuilder};
+        #[cfg(windows)]
+        let effect = Effect::Acrylic;
+        #[cfg(target_os = "macos")]
+        let effect = Effect::HudWindow;
+        let _ = window.set_effects(
+            EffectsBuilder::new()
+                .effect(effect)
+                .state(EffectState::Active)
+                // macOS: round the blur into a circle. Windows uses a window region instead.
+                .radius(SIZE / 2.0)
+                // Windows Acrylic tint: a faint warm white.
+                .color(Color(255, 244, 236, 40))
+                .build(),
+        );
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
+    let _ = window;
+}
+
+/// Clips the window to a circle so the blur isn't square and the transparent
+/// corners don't swallow clicks.
+#[cfg(windows)]
+fn clip_to_circle(window: &tauri::WebviewWindow) {
+    use windows_sys::Win32::Graphics::Gdi::{CreateEllipticRgn, SetWindowRgn};
+    let (Ok(hwnd), Ok(scale)) = (window.hwnd(), window.scale_factor()) else {
+        return;
+    };
+    let d = (SIZE * scale).round() as i32;
+    // SAFETY: `hwnd` is our live window; on success the system owns the region.
+    unsafe {
+        let region = CreateEllipticRgn(0, 0, d + 1, d + 1);
+        SetWindowRgn(hwnd.0 as _, region, 1);
+    }
 }
 
 /// Centers the wheel on the cursor and shows it.
@@ -54,7 +96,10 @@ pub fn show_at_cursor(app: &AppHandle) {
     };
     DROPPED.store(false, Ordering::SeqCst);
     #[cfg(windows)]
-    let _ = window.set_size(tauri::LogicalSize::new(SIZE, SIZE));
+    {
+        let _ = window.set_size(tauri::LogicalSize::new(SIZE, SIZE));
+        clip_to_circle(&window);
+    }
     // Hidden windows may report a zero size (GTK), so use the configured one.
     if let (Ok(cursor), Ok(scale)) = (app.cursor_position(), window.scale_factor()) {
         let half = (SIZE * scale / 2.0) as i32;
