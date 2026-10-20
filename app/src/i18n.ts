@@ -1,6 +1,6 @@
 const en = {
   dropHere: "Drop a file",
-  unsupported: "Unsupported file",
+  unsupported: "Not supported yet",
   tools: "Tools",
   convert: "Convert",
   working: "Working…",
@@ -37,7 +37,7 @@ const en = {
 
 const es: typeof en = {
   dropHere: "Suelta un archivo",
-  unsupported: "Archivo no compatible",
+  unsupported: "Aún no compatible",
   tools: "Herramientas",
   convert: "Convertir",
   working: "Procesando…",

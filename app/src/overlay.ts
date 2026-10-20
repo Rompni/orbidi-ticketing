@@ -22,6 +22,7 @@ let actions: ActionInfo[] = [];
 let group: ActionInfo["group"] = "convert";
 let hit: Hit = { kind: "none" };
 let fileName = "";
+let fileExt = "";
 let outputs: string[] = [];
 let hubTimer: number | undefined;
 let hideTimer: number | undefined;
@@ -44,7 +45,10 @@ function draw(): void {
     view.labels = [];
   } else if (phase === "hovering") {
     if (actions.length === 0) {
-      view.hubText = t.unsupported;
+      // e.g. "PDF" / "not supported yet", so it's clear why there are no segments.
+      view.hubText = fileExt || fileName;
+      view.hubSubtext = t.unsupported;
+      view.hubState = "error";
     } else if (hasOtherGroup()) {
       view.hubSubtext = group === "convert" ? `⇄ ${t.tools}` : `⇄ ${t.convert}`;
       view.hubHover = hit.kind === "hub";
@@ -69,6 +73,7 @@ function reset(): void {
   group = "convert";
   hit = { kind: "none" };
   fileName = "";
+  fileExt = "";
   outputs = [];
   clearTimeout(hubTimer);
   clearTimeout(hideTimer);
@@ -108,6 +113,7 @@ function updateHover(next: Hit): void {
 async function onEnter(paths: string[]): Promise<void> {
   clearTimeout(hideTimer);
   fileName = paths.length === 1 ? baseName(paths[0]) : `${paths.length} × 📄`;
+  fileExt = paths[0]?.split(".").pop()?.toUpperCase() ?? "";
   actions = paths.length ? await invoke<ActionInfo[]>("actions_for", { path: paths[0] }) : [];
   group = actions.some((a) => a.group === "convert") ? "convert" : "tools";
   phase = "hovering";
