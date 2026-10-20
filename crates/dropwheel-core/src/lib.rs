@@ -4,9 +4,11 @@
 //! on the wheel, and calls [`run`] with the action the user dropped the file on.
 //! Results are written next to the source file and never overwrite anything.
 
+mod docx;
 mod image_ops;
 mod output;
 mod pdf;
+mod pdf_input;
 
 use std::path::{Path, PathBuf};
 
@@ -22,15 +24,21 @@ pub enum Error {
     UnsupportedAction { action: String },
     #[error("unknown action `{0}`")]
     UnknownAction(String),
+    #[error("could not read PDF: {0}")]
+    Pdf(String),
+    #[error("this PDF has no selectable text (is it a scan?)")]
+    NoText,
     #[error(transparent)]
     Image(#[from] image::ImageError),
     #[error(transparent)]
     Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Zip(#[from] zip::result::ZipError),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// Output formats the engine can write.
+/// File formats the engine knows about.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Format {
@@ -43,10 +51,27 @@ pub enum Format {
     Gif,
     Ico,
     Pdf,
+    Txt,
+    Docx,
 }
 
 impl Format {
-    pub const ALL: [Format; 9] = [
+    pub const ALL: [Format; 11] = [
+        Format::Png,
+        Format::Jpeg,
+        Format::Webp,
+        Format::Avif,
+        Format::Tiff,
+        Format::Bmp,
+        Format::Gif,
+        Format::Ico,
+        Format::Pdf,
+        Format::Txt,
+        Format::Docx,
+    ];
+
+    /// What an image can be converted to.
+    pub const IMAGE_TARGETS: [Format; 9] = [
         Format::Png,
         Format::Jpeg,
         Format::Webp,
@@ -57,6 +82,9 @@ impl Format {
         Format::Ico,
         Format::Pdf,
     ];
+
+    /// What a PDF can be converted to.
+    pub const PDF_TARGETS: [Format; 4] = [Format::Docx, Format::Jpeg, Format::Png, Format::Txt];
 
     pub fn extension(self) -> &'static str {
         match self {
@@ -69,6 +97,8 @@ impl Format {
             Format::Gif => "gif",
             Format::Ico => "ico",
             Format::Pdf => "pdf",
+            Format::Txt => "txt",
+            Format::Docx => "docx",
         }
     }
 
@@ -83,6 +113,8 @@ impl Format {
             Format::Gif => "GIF",
             Format::Ico => "ICO",
             Format::Pdf => "PDF",
+            Format::Txt => "TXT",
+            Format::Docx => "DOCX",
         }
     }
 
@@ -97,8 +129,18 @@ impl Format {
             "gif" => Format::Gif,
             "ico" => Format::Ico,
             "pdf" => Format::Pdf,
+            "txt" => Format::Txt,
+            "docx" => Format::Docx,
             _ => return None,
         })
+    }
+
+    fn targets(self) -> &'static [Format] {
+        if self == Format::Pdf {
+            &Self::PDF_TARGETS
+        } else {
+            &Self::IMAGE_TARGETS
+        }
     }
 }
 
@@ -155,8 +197,8 @@ pub fn input_format(path: &Path) -> Option<Format> {
         .extension()
         .and_then(|e| e.to_str())
         .and_then(Format::from_extension)?;
-    // PDF and AVIF are output-only for now: reading them needs pdfium / dav1d.
-    (!matches!(format, Format::Pdf | Format::Avif)).then_some(format)
+    // AVIF needs dav1d to decode; TXT and DOCX are output-only.
+    (!matches!(format, Format::Avif | Format::Txt | Format::Docx)).then_some(format)
 }
 
 /// Actions available for `path`, in the order they should appear on the wheel.
@@ -165,15 +207,19 @@ pub fn actions_for(path: &Path) -> Vec<ActionInfo> {
     let Some(input) = input_format(path) else {
         return Vec::new();
     };
-    let mut actions: Vec<ActionInfo> = Format::ALL
-        .into_iter()
-        .filter(|&f| f != input)
-        .map(|f| ActionInfo {
+    let mut actions: Vec<ActionInfo> = input
+        .targets()
+        .iter()
+        .filter(|&&f| f != input)
+        .map(|&f| ActionInfo {
             id: Action::Convert(f).id(),
             label: f.label().into(),
             group: Group::Convert,
         })
         .collect();
+    if input == Format::Pdf {
+        return actions;
+    }
     if image_ops::can_compress(input) {
         actions.push(ActionInfo {
             id: Action::Compress.id(),
@@ -189,37 +235,47 @@ pub fn actions_for(path: &Path) -> Vec<ActionInfo> {
     actions
 }
 
-/// Runs `action` on `path` and returns the path of the file it wrote.
-pub fn run(path: &Path, action: Action) -> Result<PathBuf> {
+/// Runs `action` on `path` and returns the files it wrote: one, except for
+/// multi-page PDFs converted to images, which produce one file per page.
+pub fn run(path: &Path, action: Action) -> Result<Vec<PathBuf>> {
     let input =
         input_format(path).ok_or_else(|| Error::UnsupportedInput(path.display().to_string()))?;
+    let unsupported = || Error::UnsupportedAction {
+        action: action.id(),
+    };
+    if input == Format::Pdf {
+        return match action {
+            Action::Convert(target) if Format::PDF_TARGETS.contains(&target) => {
+                pdf_input::convert(path, target)
+            }
+            _ => Err(unsupported()),
+        };
+    }
     match action {
-        Action::Convert(target) if target == input => Err(Error::UnsupportedAction {
-            action: action.id(),
-        }),
+        Action::Convert(target) if target == input || !Format::IMAGE_TARGETS.contains(&target) => {
+            Err(unsupported())
+        }
         Action::Convert(target) => {
             let img = image_ops::open(path)?;
             let out = unique_output_path(path, "", target.extension());
             image_ops::save(&img, target, &out, image_ops::Quality::High)?;
-            Ok(out)
+            Ok(vec![out])
         }
         Action::Compress => {
             if !image_ops::can_compress(input) {
-                return Err(Error::UnsupportedAction {
-                    action: action.id(),
-                });
+                return Err(unsupported());
             }
             let img = image_ops::open(path)?;
             let out = unique_output_path(path, "-compressed", input.extension());
             image_ops::save(&img, input, &out, image_ops::Quality::Compressed)?;
-            Ok(out)
+            Ok(vec![out])
         }
         Action::StripMetadata => {
             // Re-encoding drops EXIF, GPS and XMP; orientation is baked into the pixels.
             let img = image_ops::open(path)?;
             let out = unique_output_path(path, "-clean", input.extension());
             image_ops::save(&img, input, &out, image_ops::Quality::High)?;
-            Ok(out)
+            Ok(vec![out])
         }
     }
 }

@@ -3,6 +3,12 @@ use std::path::{Path, PathBuf};
 use dropwheel_core::{actions_for, run, Action, Format, Group};
 use image::{GenericImageView, Rgba, RgbaImage};
 
+fn single(result: dropwheel_core::Result<Vec<PathBuf>>) -> PathBuf {
+    let mut outputs = result.unwrap();
+    assert_eq!(outputs.len(), 1, "{outputs:?}");
+    outputs.remove(0)
+}
+
 fn sample_png(dir: &Path) -> PathBuf {
     let img = RgbaImage::from_fn(40, 30, |x, y| {
         Rgba([
@@ -22,8 +28,11 @@ fn png_converts_to_every_other_format() {
     let dir = tempfile::tempdir().unwrap();
     let src = sample_png(dir.path());
 
-    for format in Format::ALL.into_iter().filter(|&f| f != Format::Png) {
-        let out = run(&src, Action::Convert(format)).unwrap();
+    for format in Format::IMAGE_TARGETS
+        .into_iter()
+        .filter(|&f| f != Format::Png)
+    {
+        let out = single(run(&src, Action::Convert(format)));
         assert_eq!(out.extension().unwrap(), format.extension());
         if format == Format::Pdf {
             let bytes = std::fs::read(&out).unwrap();
@@ -43,7 +52,7 @@ fn png_converts_to_every_other_format() {
 fn jpeg_output_flattens_transparency_onto_white() {
     let dir = tempfile::tempdir().unwrap();
     let src = sample_png(dir.path());
-    let out = run(&src, Action::Convert(Format::Jpeg)).unwrap();
+    let out = single(run(&src, Action::Convert(Format::Jpeg)));
     let px = image::open(out).unwrap().to_rgb8().get_pixel(35, 15).0;
     assert!(
         px.iter().all(|&c| c > 240),
@@ -55,8 +64,8 @@ fn jpeg_output_flattens_transparency_onto_white() {
 fn never_overwrites_existing_files() {
     let dir = tempfile::tempdir().unwrap();
     let src = sample_png(dir.path());
-    let first = run(&src, Action::Convert(Format::Bmp)).unwrap();
-    let second = run(&src, Action::Convert(Format::Bmp)).unwrap();
+    let first = single(run(&src, Action::Convert(Format::Bmp)));
+    let second = single(run(&src, Action::Convert(Format::Bmp)));
     assert_ne!(first, second);
     assert_eq!(second.file_name().unwrap(), "sample (2).bmp");
 }
@@ -65,7 +74,7 @@ fn never_overwrites_existing_files() {
 fn strip_metadata_removes_exif() {
     let dir = tempfile::tempdir().unwrap();
     let src = sample_png(dir.path());
-    let jpeg = run(&src, Action::Convert(Format::Jpeg)).unwrap();
+    let jpeg = single(run(&src, Action::Convert(Format::Jpeg)));
 
     // Insert a minimal EXIF APP1 segment right after the SOI marker.
     let mut bytes = std::fs::read(&jpeg).unwrap();
@@ -79,7 +88,7 @@ fn strip_metadata_removes_exif() {
     bytes.splice(2..2, segment);
     std::fs::write(&jpeg, &bytes).unwrap();
 
-    let clean = run(&jpeg, Action::StripMetadata).unwrap();
+    let clean = single(run(&jpeg, Action::StripMetadata));
     assert_eq!(clean.file_name().unwrap(), "sample-clean.jpg");
     let out = std::fs::read(clean).unwrap();
     assert!(!out.windows(6).any(|w| w == b"Exif\0\0"));
@@ -101,6 +110,7 @@ fn actions_depend_on_input_type() {
         .all(|a| a.id != "compress"));
     assert!(actions_for(Path::new("notes.txt")).is_empty());
     assert!(actions_for(Path::new("photo.avif")).is_empty());
+    assert!(png.iter().all(|a| a.id != "convert:docx"));
 }
 
 #[test]
@@ -110,5 +120,5 @@ fn action_ids_round_trip() {
         assert_eq!(Action::parse(&action.id()).unwrap(), action);
     }
     assert_eq!(Action::parse("compress").unwrap(), Action::Compress);
-    assert!(Action::parse("convert:docx").is_err());
+    assert!(Action::parse("convert:mp4").is_err());
 }

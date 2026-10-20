@@ -6,7 +6,7 @@ use image::codecs::{avif::AvifEncoder, jpeg::JpegEncoder, png};
 use image::imageops::FilterType;
 use image::{DynamicImage, ImageDecoder, ImageFormat, ImageReader, Rgb, RgbImage};
 
-use crate::{pdf, Format, Result};
+use crate::{pdf, Error, Format, Result};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Quality {
@@ -30,6 +30,11 @@ pub fn can_compress(format: Format) -> bool {
 }
 
 pub fn save(img: &DynamicImage, format: Format, out: &Path, quality: Quality) -> Result<()> {
+    if matches!(format, Format::Txt | Format::Docx) {
+        return Err(Error::UnsupportedAction {
+            action: format!("convert:{}", format.extension()),
+        });
+    }
     let mut w = BufWriter::new(File::create(out)?);
     match format {
         Format::Jpeg => {
@@ -73,6 +78,7 @@ pub fn save(img: &DynamicImage, format: Format, out: &Path, quality: Quality) ->
         Format::Tiff => img.write_to(&mut w, ImageFormat::Tiff)?,
         Format::Bmp => img.write_to(&mut w, ImageFormat::Bmp)?,
         Format::Gif => img.write_to(&mut w, ImageFormat::Gif)?,
+        Format::Txt | Format::Docx => unreachable!("rejected above"),
     }
     Ok(())
 }

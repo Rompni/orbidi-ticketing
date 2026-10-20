@@ -6,12 +6,13 @@ The result is saved next to the original (`photo.png` → `photo.jpg`, `photo (2
 
 ## Status
 
-Proof of concept. Image conversions work end to end; the drag + Shift trigger is tested on Linux (X11). macOS and Windows build in CI but still need hands-on testing.
+Early but usable. Image conversions work end to end on Windows and Linux (X11); macOS builds in CI but still needs hands-on testing. PDF input is rendered and parsed in pure Rust ([hayro](https://github.com/LaurenzV/hayro), [pdf-extract](https://github.com/jrmuizel/pdf-extract)), so no native libraries are needed.
 
 | | Supported now |
 |---|---|
-| **Read** | PNG, JPG, WEBP, TIFF, BMP, GIF, ICO |
-| **Write** | PNG, JPG, WEBP (lossless), AVIF, TIFF, BMP, GIF, ICO, PDF |
+| **Read** | PNG, JPG, WEBP, TIFF, BMP, GIF, ICO, PDF |
+| **Images →** | PNG, JPG, WEBP (lossless), AVIF, TIFF, BMP, GIF, ICO, PDF |
+| **PDF →** | DOCX, TXT (text only, no layout), JPG, PNG (one image per page, 216 dpi) |
 | **Tools** | Compress (JPG, PNG), Strip metadata (EXIF/GPS) |
 
 ## How it works
@@ -38,12 +39,15 @@ npm install
 npm run tauri dev      # run the app
 npm run tauri build    # build an installer for your OS
 cargo test --workspace # from the repo root
+
+# try the engine on a file without the app
+cargo run --release -p dropwheel-core --example convert -- "doc.pdf" convert:png
 ```
 
 ## Roadmap
 
 1. ~~Proof of concept: drag + Shift, radial overlay, image conversions, onboarding.~~
-2. PDF input (pdfium): PDF → JPG/PNG/TXT/DOCX, merge/split. HEIC and AVIF input.
+2. ~~PDF input: PDF → JPG/PNG/TXT/DOCX.~~ Next: OCR for scanned PDFs, merge/split, HEIC and AVIF input.
 3. Tools: crop, resize, remove background (ONNX model), redact, annotate.
 4. Drag the result straight out of the wheel; settings (shortcut, output folder).
 5. Wayland trigger, iOS share extension, signed releases and auto-update.

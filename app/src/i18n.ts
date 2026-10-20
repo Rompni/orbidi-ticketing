@@ -6,6 +6,7 @@ const en = {
   working: "Working…",
   done: (n: number) => (n === 1 ? "Done" : `${n} files done`),
   failed: "Failed",
+  noText: "No text (scan?)",
   reveal: "Click to show",
 
   welcomeTitle: "Welcome to Dropwheel",
@@ -30,7 +31,7 @@ const en = {
   waylandBody:
     "Wayland doesn't let apps watch the mouse and keyboard globally, so the drag + Shift gesture won't work in this session. Log in with an X11 session to use it; a shortcut-based trigger for Wayland is planned.",
   tryTitle: "Try it",
-  tryBody: "Drag an image from your file manager, press Shift while dragging, and drop it on PNG, JPG, WEBP…",
+  tryBody: "Drag an image or a PDF from your file manager, press Shift while dragging, and drop it on a format: JPG, PNG, DOCX…",
   tryHint: "The result is saved next to the original. Nothing is overwritten.",
   finish: "Start using Dropwheel",
 };
@@ -43,6 +44,7 @@ const es: typeof en = {
   working: "Procesando…",
   done: (n) => (n === 1 ? "Listo" : `${n} archivos listos`),
   failed: "Error",
+  noText: "Sin texto (¿escaneo?)",
   reveal: "Clic para mostrar",
 
   welcomeTitle: "Bienvenido a Dropwheel",
@@ -67,7 +69,7 @@ const es: typeof en = {
   waylandBody:
     "Wayland no permite a las apps vigilar el ratón y el teclado de forma global, así que el gesto arrastrar + Shift no funcionará en esta sesión. Inicia sesión con X11 para usarlo; hay prevista una alternativa con atajo de teclado para Wayland.",
   tryTitle: "Pruébalo",
-  tryBody: "Arrastra una imagen desde tu explorador de archivos, pulsa Shift mientras arrastras y suéltala sobre PNG, JPG, WEBP…",
+  tryBody: "Arrastra una imagen o un PDF desde tu explorador de archivos, pulsa Shift mientras arrastras y suéltalo sobre un formato: JPG, PNG, DOCX…",
   tryHint: "El resultado se guarda junto al original. No se sobrescribe nada.",
   finish: "Empezar a usar Dropwheel",
 };

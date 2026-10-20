@@ -24,6 +24,7 @@ let hit: Hit = { kind: "none" };
 let fileName = "";
 let fileExt = "";
 let outputs: string[] = [];
+let errorHint = "";
 let hubTimer: number | undefined;
 let hideTimer: number | undefined;
 
@@ -62,7 +63,7 @@ function draw(): void {
       hubState: "done",
     });
   } else {
-    Object.assign(view, { hubText: t.failed, hubState: "error" });
+    Object.assign(view, { hubText: t.failed, hubSubtext: errorHint || undefined, hubState: "error" });
   }
   render(svg, view);
 }
@@ -75,6 +76,7 @@ function reset(): void {
   fileName = "";
   fileExt = "";
   outputs = [];
+  errorHint = "";
   clearTimeout(hubTimer);
   clearTimeout(hideTimer);
   draw();
@@ -132,11 +134,12 @@ async function onDrop(paths: string[], target: Hit): Promise<void> {
   try {
     outputs = [];
     for (const path of paths) {
-      outputs.push(await invoke<string>("run_action", { path, action }));
+      outputs.push(...(await invoke<string[]>("run_action", { path, action })));
     }
     phase = "done";
   } catch (err) {
     console.error(err);
+    errorHint = String(err).includes("no selectable text") ? t.noText : "";
     phase = "error";
   }
   draw();

@@ -16,7 +16,7 @@ fn actions_for(path: PathBuf) -> Vec<ActionInfo> {
 }
 
 #[tauri::command]
-async fn run_action(path: PathBuf, action: String) -> Result<PathBuf, String> {
+async fn run_action(path: PathBuf, action: String) -> Result<Vec<PathBuf>, String> {
     let action = Action::parse(&action).map_err(|e| e.to_string())?;
     tauri::async_runtime::spawn_blocking(move || dropwheel_core::run(&path, action))
         .await
