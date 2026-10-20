@@ -25,6 +25,8 @@ let fileName = "";
 let fileExt = "";
 let outputs: string[] = [];
 let errorHint = "";
+/** False while the window is parked: draw nothing, ignore stray drag events. */
+let shown = false;
 let hubTimer: number | undefined;
 let hideTimer: number | undefined;
 
@@ -38,6 +40,10 @@ function baseName(path: string): string {
 }
 
 function draw(): void {
+  if (!shown) {
+    svg.replaceChildren();
+    return;
+  }
   const labels = visible().map((a) => a.label.toUpperCase());
   const hover = hit.kind === "segment" ? hit.index : null;
   const view: WheelView = { labels, hover, hubText: fileName || t.dropHere };
@@ -83,9 +89,9 @@ function reset(): void {
 }
 
 function hide(): void {
-  clearTimeout(hideTimer);
-  void invoke("hide_overlay");
+  shown = false;
   reset();
+  void invoke("hide_overlay");
 }
 
 function hideLater(ms: number): void {
@@ -157,9 +163,18 @@ svg.addEventListener("mouseenter", () => phase === "done" && clearTimeout(hideTi
 svg.addEventListener("mouseleave", () => phase === "done" && hideLater(600));
 window.addEventListener("keydown", (e) => e.key === "Escape" && hide());
 
-void listen("overlay:show", () => reset());
+void listen("overlay:show", () => {
+  shown = true;
+  reset();
+});
+// Rust also dismisses the wheel on its own (mouse released without a drop).
+void listen("overlay:hide", () => {
+  shown = false;
+  reset();
+});
 
 void getCurrentWebview().onDragDropEvent((event) => {
+  if (!shown) return;
   const p = event.payload;
   switch (p.type) {
     case "enter":

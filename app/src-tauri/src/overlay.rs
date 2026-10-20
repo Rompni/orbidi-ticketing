@@ -7,9 +7,12 @@ use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWi
 pub const LABEL: &str = "overlay";
 /// Logical width and height of the window.
 const SIZE: f64 = 380.0;
-/// Where the window waits on Windows, far outside any monitor.
+/// Where the window waits on Windows, far outside any monitor, shrunk to one
+/// pixel so it's invisible and can't block clicks even if Windows moves it back.
 #[cfg(windows)]
 const PARKED: (f64, f64) = (-20000.0, -20000.0);
+#[cfg(windows)]
+const PARKED_SIZE: f64 = 1.0;
 
 /// Set when a file is dropped on the wheel, so the release handler keeps it open.
 static DROPPED: AtomicBool = AtomicBool::new(false);
@@ -30,11 +33,17 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
     // is created, and a webview created hidden may not have them yet: drops are
     // then refused. So on Windows the wheel stays "visible", parked off-screen.
     #[cfg(windows)]
-    let builder = builder.visible(true).position(PARKED.0, PARKED.1);
+    let builder = builder
+        .visible(true)
+        .position(PARKED.0, PARKED.1)
+        .inner_size(PARKED_SIZE, PARKED_SIZE);
     #[cfg(not(windows))]
     let builder = builder.visible(false);
 
-    builder.build()?;
+    let _window = builder.build()?;
+    // The builder's position isn't always honored for off-screen coordinates.
+    #[cfg(windows)]
+    park(&_window);
     Ok(())
 }
 
@@ -44,6 +53,8 @@ pub fn show_at_cursor(app: &AppHandle) {
         return;
     };
     DROPPED.store(false, Ordering::SeqCst);
+    #[cfg(windows)]
+    let _ = window.set_size(tauri::LogicalSize::new(SIZE, SIZE));
     // Hidden windows may report a zero size (GTK), so use the configured one.
     if let (Ok(cursor), Ok(scale)) = (app.cursor_position(), window.scale_factor()) {
         let half = (SIZE * scale / 2.0) as i32;
@@ -63,9 +74,16 @@ pub fn dismiss(app: &AppHandle) {
         return;
     };
     #[cfg(windows)]
-    let _ = window.set_position(tauri::LogicalPosition::new(PARKED.0, PARKED.1));
+    park(&window);
     #[cfg(not(windows))]
     let _ = window.hide();
+    let _ = app.emit_to(LABEL, "overlay:hide", ());
+}
+
+#[cfg(windows)]
+fn park(window: &tauri::WebviewWindow) {
+    let _ = window.set_size(tauri::LogicalSize::new(PARKED_SIZE, PARKED_SIZE));
+    let _ = window.set_position(tauri::LogicalPosition::new(PARKED.0, PARKED.1));
 }
 
 pub fn mark_dropped() {
